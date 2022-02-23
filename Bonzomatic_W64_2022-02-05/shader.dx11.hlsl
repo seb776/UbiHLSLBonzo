@@ -17,61 +17,75 @@ cbuffer constants
 	float fFrameTime; // duration of the last frame, in seconds
 }
 
-float2x2 rotation(float a)
-{
-  float s = sin(a);
-  float c = cos(a);
-  return float2x2(c, -s, s, c);
-}
-
-float sdCircle(float2 uv, float2 pos, float rad)
-{
-  return distance(uv, pos) - rad;
-}
-float sdBox(float2 p, float2 b )
+float sdBox( float2 p, float2 b )
 {
     float2 d = abs(p)-b;
     return length(max(d,0.0)) + min(max(d.x,d.y),0.0);
 }
-float4 renderShapes(float2 uv)
-{
-  float2 ouv = uv;
-  float4 col = float4(0.,0.,0.,0.);
-  
-  float2 rep = float2(0.15,0.15);
-  
-  uv += float2(10.,10.);
-  float2 id = floor((uv+rep*0.5)/rep);
 
-  uv = fmod(uv+rep*0.5,rep)-rep*0.5;
-  
-  float dist = sdBox(uv, float2(0.05,0.05));
-  
-  
-  dist = min(dist, sdCircle(uv, float2(0.2,0.), 0.2));
-  
-  dist = abs(dist)-0.005;
-  dist = min(dist, abs(sdCircle(uv, float2(0.2,0.3), 0.2))-.05);
-  
-  float4 rgb = lerp(float4(1.,.1,0.1,1.), float4(0.,.1,1.,1.), saturate(sin(id.y*100.+fGlobalTime+id.x*500.)));
-  col = rgb*saturate(-dist*v2Resolution.x/2.0);
-  //*saturate(-dist*v2Resolution.x*0.5);
-  return col;
+float sdCircle(float2 uv, float r)
+{
+  return length(uv)-r;
+}
+
+float2x2 rotation(float a)
+{
+  float c = cos(a);
+  float s = sin(a);
+  return float2x2(c, -s, s, c);
+}
+
+float sdCross(float2 uv, float2 s)
+{
+  return min(sdBox(uv, s.xy), sdBox(uv, s.yx));
 }
 
 float4 main( float4 position : SV_POSITION, float2 TexCoord : TEXCOORD ) : SV_TARGET
 {
-	float2 uv = ((TexCoord-0.5)*v2Resolution.xy)/v2Resolution.x;
+	float2 uv = (TexCoord-0.5)*v2Resolution.xy/v2Resolution.xx;
 
-  float4 color = renderShapes(uv);
-    
-    // min, max, abs, lerp, clamp / saturate distance, length
-  // step smoothstep smootherstep
-  // round ceil floor
-   // sin, cos, tan, asin acos, atan, atan2
-   // ln(a) log(a), exp(a), pow(a, b), sqrt
-  // dot, cross, normalize, reflect, refract 
-  // ddx, ddy, fwidth / coarce / fine  
+  float4 color = float4(0,0,0,0);
+
+  //uv = mul(uv, rotation(fGlobalTime*10));
+  //clamp(valeur, 0, 1) = saturate(valeur)
+  float radius = 0.1;
+  float sharpness = v2Resolution.x*0.5;
+  float2 uv2 = uv;
   
+  uv2 = mul(uv+float2(sin(fGlobalTime), cos(fGlobalTime))*0.15, rotation(fGlobalTime));
+  float rnd = 0.02;
+  float shape = sdBox(uv2, float2(radius, radius)-rnd);
+  shape -= rnd;
+  /*shape = abs(shape)-0.03;
+  shape = max(shape, -sdCircle(uv, float2(radius, radius)));
+  shape = abs(shape)-0.007;
+  shape = abs(shape)-0.001;*/
+  float shape2 = sdCircle(uv, .1);
+  float shape3 = sdBox(uv, float2(.05,.3));
+  color = float4(1,1,1,1)*pow(1-saturate(shape*sharpness), 4);
+
+  color = lerp(color, float4(1,0,0,0), 1-saturate(shape2*sharpness));
+  color += float4(0,1,0,0)*(1-saturate(shape3*sharpness));
+  //uv = );
+  float2 uv3 = mul(uv, rotation(fGlobalTime));
+  color = float4(1,1,1,1)*(saturate((atan2(uv3.y,uv3.x)/3.1415)-.5)*2.*saturate(uv3.y*sharpness))*smoothstep(0,1,1.-saturate(length(uv3)*3.));
+  float th = 0.0005;
+  float ca = min(abs(sdCircle(uv, .1))-th, abs(sdCircle(uv, .2))-th);
+  color = lerp(color, float4(.7,.7,1.,1.), 1.-saturate(ca*sharpness));
+  
+  float cb = abs(sdCircle(uv, 0.25))-th*3.;
+  
+  cb = max(cb, sdCross(uv, float2(0.05+0.02*sin(fGlobalTime),1.0)));
+  color = lerp(color, float4(1,1,1.,1.), 1.-saturate(cb*sharpness));
+  
+  float2 dotcoord = uv+float2(sin(fGlobalTime), cos(fGlobalTime*.3))*.1;
+  float cc = sdCircle(dotcoord, 0.005);
+  color = lerp(color, float4(1,.2,0.1,0), 1.-saturate(cc*sharpness));
+  
+  float beat = .1;
+  float cd = abs(sdCircle(dotcoord, lerp(0,0.1,fmod(fGlobalTime*.05, beat)/beat)))-th;
+  color = lerp(color, float4(1,.2,0.1,0), 1.-saturate(cd*sharpness));
+  
+
 	return color;
 }
