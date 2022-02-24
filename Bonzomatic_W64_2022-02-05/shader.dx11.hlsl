@@ -16,7 +16,8 @@ cbuffer constants
 	float2 v2Resolution; // viewport resolution (in pixels)
 	float fFrameTime; // duration of the last frame, in seconds
 }
-
+#define PI 3.14159265
+#define TAU (2.0*PI)
 float2x2 rotation(float a)
 {
   float s = sin(a);
@@ -59,12 +60,57 @@ float4 renderShapes(float2 uv)
   return col;
 }
 
+float sdUnevenCapsule( float2 p, float r1, float r2, float h )
+{
+    p.x = abs(p.x);
+    float b = (r1-r2)/h;
+    float a = sqrt(1.0-b*b);
+    float k = dot(p,float2(-b,a));
+    if( k < 0.0 ) return length(p) - r1;
+    if( k > a*h ) return length(p-float2(0.0,h)) - r2;
+    return dot(p, float2(a,b) ) - r1;
+}
+
+float opSmoothUnion( float d1, float d2, float k ) {
+    float h = clamp( 0.5 + 0.5*(d2-d1)/k, 0.0, 1.0 );
+    return lerp( d2, d1, h ) - k*h*(1.0-h); }
+    
 float4 main( float4 position : SV_POSITION, float2 TexCoord : TEXCOORD ) : SV_TARGET
 {
 	float2 uv = ((TexCoord-0.5)*v2Resolution.xy)/v2Resolution.x;
 
   float4 color = renderShapes(uv);
-    
+    color = float4(0,0,0,0);
+  
+  
+  float stp = TAU/5.;
+  float2 uv2 = uv;
+  float off = 5.;
+  float angle = atan2(uv2.y, uv2.x);
+  float sector = fmod(angle+TAU*4.+0.5*stp, stp)-0.5*stp;
+  uv2 = float2(sin(sector), cos(sector))*length(uv2);
+ // uv2.x = clamp(uv2.x, -0.5*rep, rep*0.5);
+  //uv2.x = fmod(uv2.x+0.5*rep,rep)-rep*0.5;
+  uv2.x += sin(uv2.y*45+fGlobalTime)*0.01;
+  
+  float shape2 = sdUnevenCapsule(uv2, 0.01,0.01,0.2);
+  
+  shape2 = opSmoothUnion(shape2, sdCircle(uv, float2(0,0), 0.1), 0.05);
+  shape2 = abs(shape2)-0.005;
+  //color = float4(0,0,1,0)*saturate(-shape2*1000);
+  color = lerp(color, float4(0,0,1,0), saturate(-shape2*1000));
+  //color += float4(1,0,0,0);
+//  color += sdCircle(uv, float2(0,0), .1)*1005;
+  
+  float shape = sdCircle(uv, float2(0,0), 0.4*frac(fGlobalTime*0.1));
+  float mask = shape;
+  shape = abs(shape)-0.03;
+  if (uv.x < 0.)
+    color = lerp(color, float4(0,0,1,0), saturate(mask*1000));
+  else
+    color = lerp(color, float4(0,0,1,0), saturate(-shape*15)*saturate(-mask*1000));
+//  color = lerp(color, float4(0,0,1,0), saturate(-shape*25)*saturate(-mask*1000.));
+  //color = float4(1,1,1,1)*angle/PI;
     // min, max, abs, lerp, clamp / saturate distance, length
   // step smoothstep smootherstep
   // round ceil floor
