@@ -8,7 +8,7 @@ Texture1D texFFT; // towards 0.0 is bass / lower freq, towards 1.0 is higher / t
 Texture1D texFFTSmoothed; // this one has longer falloff and less harsh transients
 Texture1D texFFTIntegrated; // this is continually increasing
 Texture2D texPreviousFrame; // screenshot of the previous frame
-SamplerState smp;
+SamplerState smp2;
 
 cbuffer constants
 {
@@ -117,7 +117,12 @@ float4 main( float4 position : SV_POSITION, float2 TexCoord : TEXCOORD ) : SV_TA
    // sin, cos, tan, asin acos, atan, atan2
    // ln(a) log(a), exp(a), pow(a, b), sqrt
   // dot, cross, normalize, reflect, refract 
-  // ddx, ddy, fwidth / coarce / fine  
+  // ddx, ddy, fwidth / coarce / fine 
+color = float4(0,0,0,0);  
+  float3 colA = texChecker.Sample(smp2, uv*2.5*float2(1.,-1.)+float2(0.,sin(uv.x*5.+fGlobalTime)*.1)).xyz;
+    float3 colB = texTex1.Sample(smp2, uv*2.5*float2(1.,-1.)+float2(0.,sin(uv.x*5.-fGlobalTime)*.1)).xyz;
+  float maskbrick = saturate(pow(colB.x,5.)*10.);
+color.xyz = lerp(colA, colB, saturate(sin(uv.x*20.+fGlobalTime)*0.5+0.5)*(1.-maskbrick));
   
 	return color;
 }
