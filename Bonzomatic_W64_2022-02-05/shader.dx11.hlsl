@@ -10,6 +10,8 @@ Texture1D texFFTIntegrated; // this is continually increasing
 Texture2D texPreviousFrame; // screenshot of the previous frame
 SamplerState smp;
 
+
+
 cbuffer constants
 {
 	float fGlobalTime; // in seconds
@@ -86,6 +88,13 @@ float4 main( float4 position : SV_POSITION, float2 TexCoord : TEXCOORD ) : SV_TA
   float cd = abs(sdCircle(dotcoord, lerp(0,0.1,fmod(fGlobalTime*.05, beat)/beat)))-th;
   color = lerp(color, float4(1,.2,0.1,0), 1.-saturate(cd*sharpness));
   
+
+/*
+  color = float4(0,0,0,0);
+  float2 uv4 = mul(uv, rotation(fGlobalTime));
+  float cir = sdCircle(uv, 0.1);
+  color = float4(1,1,1,1)*saturate(atan2(uv4.y,uv4.x)/3.1415-0.7)*3.*(1.-saturate(cir*4.));
+*/
 
 	return color;
 }
