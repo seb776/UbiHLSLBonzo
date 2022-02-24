@@ -118,11 +118,24 @@ float4 main( float4 position : SV_POSITION, float2 TexCoord : TEXCOORD ) : SV_TA
    // ln(a) log(a), exp(a), pow(a, b), sqrt
   // dot, cross, normalize, reflect, refract 
   // ddx, ddy, fwidth / coarce / fine 
-color = float4(0,0,0,0);  
   float3 colA = texChecker.Sample(smp2, uv*2.5*float2(1.,-1.)+float2(0.,sin(uv.x*5.+fGlobalTime)*.1)).xyz;
     float3 colB = texTex1.Sample(smp2, uv*2.5*float2(1.,-1.)+float2(0.,sin(uv.x*5.-fGlobalTime)*.1)).xyz;
   float maskbrick = saturate(pow(colB.x,5.)*10.);
-color.xyz = lerp(colA, colB, saturate(sin(uv.x*20.+fGlobalTime)*0.5+0.5)*(1.-maskbrick));
+color.xyz = lerp(colA, color.xyz, saturate(sin(uv.x*20.+fGlobalTime)*0.5+0.5)*(1.-maskbrick));
+//  xyzw
+//  rgba
+//  stpq
   
+  color = float4(0,0,0,0);
+  float3 colBrick = texTex1.Sample(smp2, uv).xyz;
+  float maskBrick = saturate(pow(colBrick.y,3.)*5.);
+  float maxSize = 0.8;
+  float sz = frac(fGlobalTime*0.4)*maxSize;
+  
+  float circle = sdCircle(uv, float2(0,0), sz);
+  circle = abs(circle)-0.05;
+  float3 light = float3(1,0,0);
+  color.xyz = lerp(colBrick.yyy, light*saturate(-circle*50)*pow(1.-sz/maxSize,5.), maskBrick);////float3(1,1,1)*maskBrick;
+  color.xyz = pow(color, float3(2.,2.,2.));
 	return color;
 }
