@@ -50,6 +50,7 @@ float _spaceshipbody(float2 uv)
   return acc;
 }
 #define pal(a, b, c, d, f) (a+b*cos(2.*PI*(c*f+d)))
+
 float3 rdr(float2 uv)
 {
   float3 col = float3(0,0,0);
@@ -77,6 +78,7 @@ float3 rdr(float2 uv)
   }
   bubbles = max(bubbles, lavamask);
   float3 colbubble = pal(.5,.5,1.,float3(.8,.2,.6), bubbles*10.5);
+
   col = lerp(col, colbubble,(1.-saturate(bubbles*sharpness)));
   
   col += colbubble*(1.-saturate(bubbles*20.));
@@ -91,6 +93,6 @@ float4 main( float4 position : SV_POSITION, float2 TexCoord : TEXCOORD ) : SV_TA
 	uv /= float2(v2Resolution.y / v2Resolution.x, 1);
 
   float3 col = rdr(uv);
-    
+  
 	return float4(col, 1.);
 }
