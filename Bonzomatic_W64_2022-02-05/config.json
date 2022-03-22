@@ -13,6 +13,7 @@
     "texTex2":"textures/tex2.jpg",
     "texTex3":"textures/tex3.jpg",
     "texTex4":"textures/tex4.jpg",
+    "texVoronoi":"textures/voronoi.jpg",
   },
   "gui":{
     "outputHeight": 100,
