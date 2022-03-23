@@ -56,10 +56,8 @@ vec2 _min(vec2 a, vec2 b)
 vec2 map(vec3 p)
 {
   vec2 acc = vec2(100000.,-1.);
-  float shape = length(p)-1.;
-  vec3 pc = p+vec3(1.,0,-0.);
-  pc.yz *= r2d(fGlobalTime);
-  shape = min(shape, _cube(pc, vec3(.5)));
+
+  float shape = _cube(p, vec3(.5));
   
   acc = _min(acc, vec2(shape, 0.));
   
@@ -104,8 +102,6 @@ vec3 rdr(vec2 uv)
 {
   vec3 col = vec3(0.);
   
-  //col = vec3(1.)*(1.-sat((length(uv)-.25)*400.));
-  
   vec3 ro = vec3(sin(fGlobalTime*.25)*5.,0.,cos(fGlobalTime*.25)*5.);
   vec3 ta = vec3(0,0,0);
   vec3 rd = normalize(ta-ro);
@@ -117,32 +113,12 @@ vec3 rdr(vec2 uv)
     vec3 p = ro+rd*res.y;
     vec3 n= getNormal(p);
     
-    float ao = 0.;
-    int sampleao = 8;
-    
-   for (int i = 0; i < sampleao; ++i)
-    {
-    vec3 sampledir = normalize(vec3(rand(), rand(), rand())-0.5);
-    if (dot(sampledir, n) < 0.0)
-      sampledir = -sampledir;
-    vec4 resao = trace(p+n*0.01, sampledir, 8, 1.5);
-    float fact = 1000.0;
-    if (resao.y > 0.)
-      fact = resao.y;
-    fact = sat(fact/1.5);
-    ao+= fact;
-  }
-  ao /= float(sampleao);
-  
-  ao = pow(1.-sat(res.w/128.),.4);
-  float distao = 1.5;
-  ao = sat(map(p+n*0.5*distao).x/distao);
+    float ao = pow(1.-sat(res.w/128.),.4);
+    float distao = 1.5;
+    ao = sat(map(p+n*0.5*distao).x/distao);
     col = mix(vec3(1.),(n*.5+.5),.25);
-  col *= sat(ao+0.7);
+    col *= sat(ao+0.7);
 
-    //*0.75*getEnv(refl);
-    //vec3 refl = normalize(reflect(rd, n));    
-//    col += 0.5*getEnv(refl);
   }
 
   
